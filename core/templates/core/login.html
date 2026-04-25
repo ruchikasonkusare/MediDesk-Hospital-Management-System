@@ -1,0 +1,129 @@
+{% extends 'core/base.html' %}
+
+{% block auth_content %}
+<style>
+  .login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0d1117 0%, #0b2c28 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .login-page::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(26,163,149,.15) 0%, transparent 70%);
+    top: -150px; right: -150px;
+  }
+  .login-page::after {
+    content: '';
+    position: absolute;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(26,163,149,.08) 0%, transparent 70%);
+    bottom: -100px; left: -100px;
+  }
+  .login-card {
+    background: white;
+    border-radius: 20px;
+    padding: 48px;
+    width: 420px;
+    box-shadow: 0 24px 80px rgba(0,0,0,.3);
+    position: relative; z-index: 1;
+  }
+  .login-brand {
+    text-align: center; margin-bottom: 36px;
+  }
+  .login-brand .logo {
+    font-family: 'Fraunces', serif;
+    font-size: 32px; font-weight: 600;
+    color: #0d1117;
+  }
+  .login-brand .logo span { color: #1aa395; }
+  .login-brand .sub {
+    font-size: 13px; color: #7a8699; margin-top: 4px;
+  }
+  .login-form { display: flex; flex-direction: column; gap: 16px; }
+  .login-form .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .login-form .form-label { font-size: 13px; font-weight: 500; color: #3b4452; }
+  .login-form .form-input {
+    padding: 11px 14px;
+    border: 1.5px solid #e2e6ed;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    width: 100%;
+    transition: border .15s, box-shadow .15s;
+  }
+  .login-form .form-input:focus {
+    outline: none;
+    border-color: #1aa395;
+    box-shadow: 0 0 0 3px rgba(26,163,149,.12);
+  }
+  .login-btn {
+    background: #0b7a6e;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background .15s;
+  }
+  .login-btn:hover { background: #096059; }
+  .login-error {
+    background: #fdecea; color: #c0392b;
+    padding: 10px 14px; border-radius: 8px;
+    font-size: 13px;
+  }
+  .login-hint {
+    text-align: center;
+    font-size: 12px; color: #7a8699;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e6ed;
+  }
+</style>
+
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="logo">Medi<span>Desk</span></div>
+      <div class="sub">Healthcare Management System</div>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+      <div class="login-error" style="margin-bottom:16px;">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" class="login-form">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        {{ form.username }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        {{ form.password }}
+      </div>
+      {% if form.errors %}
+      <div class="login-error">Invalid username or password.</div>
+      {% endif %}
+      <button type="submit" class="login-btn">Sign In →</button>
+    </form>
+
+    <div class="login-hint">
+      Default credentials: <strong>admin</strong> / <strong>admin123</strong><br>
+      (Run setup script to create superuser)
+    </div>
+  </div>
+</div>
+{% endblock %}

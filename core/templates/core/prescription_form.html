@@ -1,0 +1,83 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}<strong>{{ title }}</strong>{% endblock %}
+{% block topbar_actions %}<a href="/prescriptions/" class="btn btn-secondary">← Prescriptions</a>{% endblock %}
+
+{% block content %}
+<div style="max-width:960px;">
+  <form method="post" id="rx-form">
+    {% csrf_token %}
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Prescription Info</div></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label required">Patient</label>{{ form.patient }}{% if form.patient.errors %}<div class="form-error">{{ form.patient.errors.0 }}</div>{% endif %}</div>
+          <div class="form-group"><label class="form-label required">Doctor</label>{{ form.doctor }}{% if form.doctor.errors %}<div class="form-error">{{ form.doctor.errors.0 }}</div>{% endif %}</div>
+          <div class="form-group"><label class="form-label required">Medical Record</label>{{ form.medical_record }}{% if form.medical_record.errors %}<div class="form-error">{{ form.medical_record.errors.0 }}</div>{% endif %}</div>
+          <div class="form-group"><label class="form-label">Status</label>{{ form.status }}</div>
+          <div class="form-group"><label class="form-label required">Prescribed Date</label>{{ form.prescribed_date }}</div>
+          <div class="form-group"><label class="form-label">Valid Until</label>{{ form.valid_until }}</div>
+          <div class="form-group full"><label class="form-label">Notes / Instructions</label>{{ form.notes }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Medicines -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <div class="card-title">Medicines</div>
+        <button type="button" class="btn btn-primary btn-sm" onclick="addRow()">+ Add Medicine</button>
+      </div>
+      <div id="medicine-rows" style="padding:14px 20px;">
+        <!-- Default Row -->
+        <div class="med-row" style="display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr 1fr 80px 70px;gap:8px;margin-bottom:10px;align-items:end;">
+          <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:11px;">Medicine Name *</label><input type="text" name="medicine_name" class="form-input" placeholder="e.g. Paracetamol 500mg" required></div>
+          <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:11px;">Generic Name</label><input type="text" name="generic_name" class="form-input" placeholder="Generic"></div>
+          <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:11px;">Dosage *</label><input type="text" name="dosage" class="form-input" placeholder="e.g. 1 tab"></div>
+          <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:11px;">Frequency</label><select name="frequency" class="form-input" style="font-size:12px;">{% for v,l in frequency_choices %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+          <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:11px;">Timing</label><select name="timing" class="form-input" style="font-size:12px;"><option value="">—</option>{% for v,l in timing_choices %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+          <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:11px;">Days</label><input type="number" name="duration_days" class="form-input" value="5" min="1"></div>
+          <div class="form-group" style="margin:0;align-self:flex-end;"><button type="button" onclick="removeRow(this)" class="btn btn-danger btn-sm" style="width:100%;justify-content:center;">✕</button></div>
+        </div>
+      </div>
+    </div>
+
+    {% if form.non_field_errors %}
+    <div class="alert-box alert-danger" style="margin-bottom:14px;">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
+    {% endif %}
+
+    <div style="display:flex;gap:10px;">
+      <button type="submit" class="btn btn-primary">Save Prescription</button>
+      <a href="/prescriptions/" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script>
+const freqOpts = `{% for v,l in frequency_choices %}<option value="{{ v }}">{{ l }}</option>{% endfor %}`;
+const timingOpts = `<option value="">—</option>{% for v,l in timing_choices %}<option value="{{ v }}">{{ l }}</option>{% endfor %}`;
+
+function addRow() {
+  const container = document.getElementById('medicine-rows');
+  const row = document.createElement('div');
+  row.className = 'med-row';
+  row.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr 1fr 80px 70px;gap:8px;margin-bottom:10px;align-items:end;';
+  row.innerHTML = `
+    <div class="form-group" style="margin:0;"><input type="text" name="medicine_name" class="form-input" placeholder="Medicine name" required></div>
+    <div class="form-group" style="margin:0;"><input type="text" name="generic_name" class="form-input" placeholder="Generic"></div>
+    <div class="form-group" style="margin:0;"><input type="text" name="dosage" class="form-input" placeholder="Dosage"></div>
+    <div class="form-group" style="margin:0;"><select name="frequency" class="form-input" style="font-size:12px;">${freqOpts}</select></div>
+    <div class="form-group" style="margin:0;"><select name="timing" class="form-input" style="font-size:12px;">${timingOpts}</select></div>
+    <div class="form-group" style="margin:0;"><input type="number" name="duration_days" class="form-input" value="5" min="1"></div>
+    <div class="form-group" style="margin:0;"><button type="button" onclick="removeRow(this)" class="btn btn-danger btn-sm" style="width:100%;justify-content:center;">✕</button></div>
+  `;
+  container.appendChild(row);
+}
+
+function removeRow(btn) {
+  const rows = document.querySelectorAll('.med-row');
+  if (rows.length > 1) btn.closest('.med-row').remove();
+}
+</script>
+{% endblock %}

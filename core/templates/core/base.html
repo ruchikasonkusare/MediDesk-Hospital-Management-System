@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}MediDesk{% endblock %} – Healthcare Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root{--ink:#0d1117;--ink-2:#3b4452;--ink-3:#7a8699;--surface:#f7f8fa;--surface-2:#eef0f4;--white:#fff;--teal:#0b7a6e;--teal-light:#e6f4f2;--teal-mid:#1aa395;--amber:#e87c1e;--amber-light:#fef3e6;--rose:#c0392b;--rose-light:#fdecea;--blue:#1a56b0;--blue-light:#e8f0fd;--green:#1a7a3e;--green-light:#e6f5ec;--border:#e2e6ed;--shadow:0 1px 3px rgba(13,17,23,.06),0 4px 16px rgba(13,17,23,.04);--shadow-md:0 2px 8px rgba(13,17,23,.08),0 8px 32px rgba(13,17,23,.06);--radius:12px;--radius-sm:8px;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink);font-size:14px;line-height:1.6;min-height:100vh;}
+    a{color:inherit;text-decoration:none;}
+    .sidebar{position:fixed;top:0;left:0;width:240px;height:100vh;background:var(--ink);display:flex;flex-direction:column;z-index:100;overflow:hidden;}
+    .sidebar-logo{padding:24px 24px 16px;border-bottom:1px solid rgba(255,255,255,.08);}
+    .brand{font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:#fff;letter-spacing:-.3px;}
+    .brand span{color:var(--teal-mid);}
+    .tagline{font-size:10px;color:rgba(255,255,255,.3);margin-top:2px;letter-spacing:.5px;text-transform:uppercase;}
+    .sidebar-nav{padding:12px 10px;flex:1;overflow-y:auto;}
+    .nav-label{font-size:10px;font-weight:600;color:rgba(255,255,255,.25);letter-spacing:1px;text-transform:uppercase;padding:10px 12px 4px;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;color:rgba(255,255,255,.6);font-size:13px;font-weight:500;transition:all .15s;margin-bottom:2px;cursor:pointer;}
+    .nav-item:hover{background:rgba(255,255,255,.07);color:#fff;}
+    .nav-item.active{background:var(--teal);color:#fff;}
+    .nav-item svg{width:16px;height:16px;flex-shrink:0;}
+    .sidebar-footer{padding:12px 10px;border-top:1px solid rgba(255,255,255,.08);}
+    .user-block{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;margin-bottom:4px;}
+    .user-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+    .user-name{font-size:12.5px;font-weight:500;color:#fff;}
+    .user-role{font-size:10px;color:rgba(255,255,255,.35);text-transform:capitalize;}
+    .av-admin{background:#e87c1e;} .av-doctor{background:#0b7a6e;} .av-receptionist{background:#1a56b0;} .av-nurse{background:#1a7a3e;} .av-pharmacist{background:#c0392b;}
+    .main-wrap{margin-left:240px;min-height:100vh;}
+    .topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+    .topbar-title{font-family:'Fraunces',serif;font-size:19px;font-weight:300;color:var(--ink);}
+    .topbar-title strong{font-weight:600;}
+    .topbar-right{display:flex;align-items:center;gap:10px;}
+    .notif-btn{position:relative;width:36px;height:36px;border-radius:8px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-2);text-decoration:none;}
+    .notif-badge{position:absolute;top:-4px;right:-4px;background:var(--rose);color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;border:none;transition:all .15s;text-decoration:none;}
+    .btn-primary{background:var(--teal);color:#fff;} .btn-primary:hover{background:#096059;}
+    .btn-secondary{background:var(--surface-2);color:var(--ink-2);} .btn-secondary:hover{background:var(--border);}
+    .btn-danger{background:var(--rose-light);color:var(--rose);} .btn-amber{background:var(--amber-light);color:var(--amber);} .btn-green{background:var(--green-light);color:var(--green);}
+    .btn-sm{padding:5px 12px;font-size:12px;} .btn-xs{padding:3px 8px;font-size:11px;}
+    .page-content{padding:24px 28px;}
+    .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
+    .card-header{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+    .card-title{font-size:13.5px;font-weight:600;color:var(--ink);}
+    .card-body{padding:20px;}
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+    .stat-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);}
+    .stat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;}
+    .stat-label{font-size:11px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+    .stat-value{font-family:'Fraunces',serif;font-size:32px;font-weight:600;color:var(--ink);margin:2px 0;line-height:1;}
+    .stat-sub{font-size:11px;color:var(--ink-3);}
+    .stat-teal .stat-icon{background:var(--teal-light);color:var(--teal);} .stat-blue .stat-icon{background:var(--blue-light);color:var(--blue);}
+    .stat-amber .stat-icon{background:var(--amber-light);color:var(--amber);} .stat-green .stat-icon{background:var(--green-light);color:var(--green);} .stat-rose .stat-icon{background:var(--rose-light);color:var(--rose);}
+    table{width:100%;border-collapse:collapse;} .table-wrap{overflow-x:auto;}
+    thead th{text-align:left;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.5px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);}
+    tbody td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13.5px;color:var(--ink-2);}
+    tbody tr:last-child td{border-bottom:none;} tbody tr:hover td{background:var(--surface);}
+    .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+    .badge-scheduled{background:var(--blue-light);color:var(--blue);} .badge-confirmed{background:var(--teal-light);color:var(--teal);}
+    .badge-completed,.badge-paid,.badge-active,.badge-dispensed{background:var(--green-light);color:var(--green);}
+    .badge-cancelled,.badge-unpaid,.badge-no_show{background:var(--rose-light);color:var(--rose);}
+    .badge-in_progress,.badge-partial{background:var(--amber-light);color:var(--amber);}
+    .badge-waived,.badge-refunded{background:var(--surface-2);color:var(--ink-3);}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;} .form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+    .form-group{display:flex;flex-direction:column;gap:5px;} .form-group.full{grid-column:1/-1;}
+    .form-label{font-size:12px;font-weight:600;color:var(--ink-2);} .form-label.required::after{content:" *";color:var(--rose);}
+    .form-input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:13.5px;color:var(--ink);background:#fff;transition:border .15s,box-shadow .15s;}
+    .form-input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(11,122,110,.1);}
+    textarea.form-input{resize:vertical;} .form-checkbox{width:16px;height:16px;accent-color:var(--teal);}
+    .messages-wrap{margin-bottom:16px;}
+    .msg{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+    .msg.success{background:var(--green-light);color:var(--green);} .msg.error{background:var(--rose-light);color:var(--rose);} .msg.warning{background:var(--amber-light);color:var(--amber);}
+    .search-bar{display:flex;gap:10px;align-items:center;margin-bottom:16px;} .search-wrap{position:relative;}
+    .search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--ink-3);}
+    .search-input{padding:8px 12px 8px 32px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:13.5px;background:#fff;width:300px;}
+    .search-input:focus{outline:none;border-color:var(--teal);}
+    .detail-label{font-size:10px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.5px;}
+    .detail-value{font-size:13.5px;color:var(--ink);margin-top:2px;}
+    .empty-state{text-align:center;padding:40px 24px;color:var(--ink-3);}
+    .alert-box{padding:12px 16px;border-radius:var(--radius-sm);font-size:13px;border-left:4px solid;}
+    .alert-red{background:var(--rose-light);border-color:var(--rose);color:var(--rose);}
+    .alert-amber{background:var(--amber-light);border-color:var(--amber);color:var(--amber);}
+    .role-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;}
+    .role-tag-admin{background:rgba(232,124,30,.2);color:#c06000;}
+    .role-tag-doctor{background:rgba(11,122,110,.15);color:#0b7a6e;}
+    .role-tag-receptionist{background:rgba(26,86,176,.15);color:#1a56b0;}
+    .role-tag-nurse{background:rgba(26,122,62,.15);color:#1a7a3e;}
+    .role-tag-pharmacist{background:rgba(192,57,43,.15);color:#c0392b;}
+    @media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr;}.form-grid,.form-grid-3{grid-template-columns:1fr;}}
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+{% if user.is_authenticated %}
+
+{# ── Determine role safely ── #}
+{% with ur=user.is_superuser %}
+{% if user.is_superuser %}{% with role_display="admin" %}{% endwith %}{% endif %}
+{% endwith %}
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">Medi<span>Desk</span></div>
+    <div class="tagline">Healthcare Management</div>
+  </div>
+  <nav class="sidebar-nav">
+
+    <div class="nav-label">Overview</div>
+    <a href="/dashboard/" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      Dashboard
+    </a>
+
+    {# ── Patients: all roles except pharmacist ── #}
+    {% if not user_role == 'pharmacist' %}
+    <div class="nav-label">Clinical</div>
+    <a href="/patients/" class="nav-item {% if 'patient' in request.resolver_match.url_name %}active{% endif %}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Patients
+    </a>
+    {% endif %}
+
+    {# ── Doctors: admin and receptionist see this ── #}
+    {% if user.is_superuser or user_role == 'admin' or user_role == 'receptionist' %}
+    <a href="/doctors/" class="nav-item {% if 'doctor' in request.resolver_match.url_name %}active{% endif %}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Doctors
+    </a>
+    {% endif %}
+
+    {# ── Appointments: all except pharmacist ── #}
+    {% if not user_role == 'pharmacist' %}
+    <a href="/appointments/" class="nav-item {% if 'appointment' in request.resolver_match.url_name %}active{% endif %}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      Appointments
+    </a>
+    {% endif %}
+
+    {# ── Records: all except pharmacist ── #}
+    {% if not user_role == 'pharmacist' %}
+    <div class="nav-label">Records</div>
+    <a href="/records/" class="nav-item {% if 'record' in request.resolver_match.url_name %}active{% endif %}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      Medical Records
+    </a>
+    {% endif %}
+
+    {# ── Prescriptions: all roles ── #}
+    <a href="/prescriptions/" class="nav-item {% if 'prescription' in request.resolver_match.url_name %}active{% endif %}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+      Prescriptions
+    </a>
+
+    {# ── Billing: admin and receptionist only ── #}
+    {% if user.is_superuser or user_role == 'admin' or user_role == 'receptionist' %}
+    <div class="nav-label">Finance</div>
+    <a href="/billing/" class="nav-item {% if 'bill' in request.resolver_match.url_name %}active{% endif %}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+      Billing
+    </a>
+    {% endif %}
+
+    
+    {# ── Analytics: admin and doctor ── #}
+    {% if user.is_superuser or user_role == 'admin' or user_role == 'doctor' or user_role == 'receptionist' %}
+    <div class="nav-label">Insights</div>
+    <a href="/analytics/" class="nav-item {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Analytics
+    </a>
+    {% endif %}
+
+    {# ── Staff Management: admin only ── #}
+    {% if user.is_superuser or user_role == 'admin' %}
+    <div class="nav-label">Admin</div>
+    <a href="/staff/" class="nav-item {% if 'staff' in request.resolver_match.url_name %}active{% endif %}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      Staff Management
+    </a>
+    {% endif %}
+
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-block">
+      <div class="user-av av-{% if user.is_superuser %}admin{% else %}{{ user_role|default:'admin' }}{% endif %}">
+        {{ user.username|first|upper }}
+      </div>
+      <div>
+        <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+        <div class="user-role">
+          {% if user.is_superuser %}Administrator
+          {% else %}{{ user_profile.get_role_display|default:"Staff" }}{% endif %}
+        </div>
+      </div>
+    </div>
+    <a href="/notifications/" class="nav-item {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      Notifications
+    </a>
+    <a href="/logout/" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      Sign Out
+    </a>
+  </div>
+</aside>
+
+<div class="main-wrap">
+  <div class="topbar">
+    <div class="topbar-title">{% block page_title %}<strong>Dashboard</strong>{% endblock %}</div>
+    <div class="topbar-right">
+      {% block topbar_actions %}{% endblock %}
+      <a href="/notifications/" class="notif-btn" title="Notifications">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      </a>
+    </div>
+  </div>
+  <div class="page-content">
+    {% if messages %}
+    <div class="messages-wrap">
+      {% for message in messages %}
+      <div class="msg {{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+{% else %}
+{% block auth_content %}{% endblock %}
+{% endif %}
+</body>
+</html>

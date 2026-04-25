@@ -1,0 +1,68 @@
+{% extends 'core/base.html' %}
+{% block title %}Prescription{% endblock %}
+{% block page_title %}<strong>Prescription</strong>{% endblock %}
+{% block topbar_actions %}
+<a href="/prescriptions/" class="btn btn-secondary">← Prescriptions</a>
+{% if role == 'pharmacist' or role == 'admin' %}
+  {% if prescription.status == 'active' %}
+  <form method="post" action="/prescriptions/{{ prescription.pk }}/dispense/" style="display:inline;">
+    {% csrf_token %}<button type="submit" class="btn btn-success">✓ Mark Dispensed</button>
+  </form>
+  {% endif %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div style="max-width:760px;">
+  <!-- Header -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-body">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+        <div>
+          <div style="font-size:11px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Prescription</div>
+          <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:600;">{{ prescription.patient.name }}</div>
+          <div style="font-size:12.5px;color:var(--ink-3);">{{ prescription.patient.patient_id }} · Age {{ prescription.patient.age }} · {{ prescription.patient.get_gender_display }}</div>
+          {% if prescription.patient.allergies %}<div style="margin-top:6px;font-size:12px;color:var(--rose);">⚠ Allergies: {{ prescription.patient.allergies }}</div>{% endif %}
+        </div>
+        <div style="text-align:right;">
+          <span class="badge badge-{{ prescription.status }}" style="font-size:13px;padding:5px 14px;">{{ prescription.get_status_display }}</span>
+          <div style="font-size:13px;font-weight:500;margin-top:10px;">{{ prescription.prescribed_date|date:"F d, Y" }}</div>
+          {% if prescription.valid_until %}<div style="font-size:12px;color:var(--amber);">Valid until {{ prescription.valid_until|date:"M d, Y" }}</div>{% endif %}
+          {% if prescription.dispensed_by %}<div style="font-size:12px;color:var(--green);margin-top:4px;">Dispensed by {{ prescription.dispensed_by.get_full_name|default:prescription.dispensed_by.username }}</div>{% endif %}
+        </div>
+      </div>
+      <div style="display:flex;gap:24px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+        <div><div class="detail-label">Prescribed By</div><div class="detail-value">Dr. {{ prescription.doctor.name }}</div><div style="font-size:11.5px;color:var(--ink-3);">{{ prescription.doctor.get_specialization_display }}</div></div>
+        {% if prescription.notes %}<div><div class="detail-label">Notes</div><div class="detail-value" style="font-size:13px;color:var(--ink-2);">{{ prescription.notes }}</div></div>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Medicines -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Medicines ({{ prescription.items.count }})</div></div>
+    {% for item in prescription.items.all %}
+    <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:14px;">
+      <div style="width:38px;height:38px;background:{% if item.is_dispensed %}var(--green-light){% else %}var(--teal-light){% endif %};border-radius:9px;display:flex;align-items:center;justify-content:center;color:{% if item.is_dispensed %}var(--green){% else %}var(--teal){% endif %};font-weight:700;font-size:12px;flex-shrink:0;">Rx</div>
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-weight:600;font-size:14px;color:var(--ink);">{{ item.medicine_name }}</span>
+          {% if item.generic_name %}<span style="font-size:12px;color:var(--ink-3);">({{ item.generic_name }})</span>{% endif %}
+          {% if item.is_dispensed %}<span class="badge badge-completed" style="font-size:10px;">Dispensed</span>{% endif %}
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:5px;">
+          <span style="font-size:12.5px;background:var(--surface);padding:3px 9px;border-radius:6px;color:var(--ink-2);">{{ item.dosage }}</span>
+          <span style="font-size:12.5px;background:var(--surface);padding:3px 9px;border-radius:6px;color:var(--ink-2);">{{ item.get_frequency_display }}</span>
+          {% if item.timing %}<span style="font-size:12.5px;background:var(--surface);padding:3px 9px;border-radius:6px;color:var(--ink-2);">{{ item.get_timing_display }}</span>{% endif %}
+          <span style="font-size:12.5px;background:var(--surface);padding:3px 9px;border-radius:6px;color:var(--ink-2);">{{ item.get_route_display }}</span>
+          <span style="font-size:12.5px;background:var(--amber-light);padding:3px 9px;border-radius:6px;color:var(--amber);">{{ item.duration_days }} days</span>
+        </div>
+        {% if item.instructions %}<div style="font-size:12px;color:var(--ink-3);margin-top:5px;font-style:italic;">{{ item.instructions }}</div>{% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state" style="padding:28px;"><p>No medicines in this prescription.</p></div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

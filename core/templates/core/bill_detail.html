@@ -1,0 +1,100 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ bill.bill_number }}{% endblock %}
+{% block page_title %}<strong>Bill {{ bill.bill_number }}</strong>{% endblock %}
+{% block topbar_actions %}<a href="/billing/" class="btn btn-secondary">← Billing</a>{% endblock %}
+{% block content %}
+<div style="max-width:760px;">
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-body">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:600;">{{ bill.bill_number }}</div>
+        <div style="font-size:13px;color:var(--ink-3);">Generated {{ bill.bill_date|date:"d F Y" }} by {{ bill.generated_by.get_full_name|default:bill.generated_by.username|default:"System" }}</div>
+      </div>
+      <span class="badge badge-{{ bill.payment_status }}" style="font-size:13px;padding:6px 14px;">{{ bill.get_payment_status_display }}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;padding-top:16px;border-top:1px solid var(--border);">
+      <div>
+        <div class="detail-label">Patient</div>
+        <div class="detail-value"><a href="/patients/{{ bill.patient.pk }}/" style="color:var(--teal);font-weight:500;">{{ bill.patient.name }}</a></div>
+        <div style="font-size:12px;color:var(--ink-3);">{{ bill.patient.patient_id }} · {{ bill.patient.phone }}</div>
+      </div>
+      {% if bill.appointment %}
+      <div>
+        <div class="detail-label">Appointment</div>
+        <div class="detail-value">Dr. {{ bill.appointment.doctor.name }}</div>
+        <div style="font-size:12px;color:var(--ink-3);">{{ bill.appointment.appointment_date|date:"d M Y" }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header"><div class="card-title">Charges Breakdown</div></div>
+  <div class="card-body">
+    {% if bill.consultation_charge > 0 %}<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13.5px;"><span>Consultation</span><span>₹{{ bill.consultation_charge }}</span></div>{% endif %}
+    {% if bill.procedure_charge > 0 %}<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13.5px;"><span>Procedure</span><span>₹{{ bill.procedure_charge }}</span></div>{% endif %}
+    {% if bill.medicine_charge > 0 %}<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13.5px;"><span>Medicines</span><span>₹{{ bill.medicine_charge }}</span></div>{% endif %}
+    {% if bill.lab_charge > 0 %}<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13.5px;"><span>Lab / Tests</span><span>₹{{ bill.lab_charge }}</span></div>{% endif %}
+    {% if bill.room_charge > 0 %}<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13.5px;"><span>Room / Bed</span><span>₹{{ bill.room_charge }}</span></div>{% endif %}
+    {% if bill.other_charge > 0 %}<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13.5px;"><span>{{ bill.other_charge_label|default:"Other" }}</span><span>₹{{ bill.other_charge }}</span></div>{% endif %}
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:14px;font-weight:600;border-top:2px solid var(--border);margin-top:4px;"><span>Gross Total</span><span>₹{{ bill.gross_amount }}</span></div>
+    {% if bill.discount_percent > 0 %}
+    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:var(--green);">
+      <span>Discount ({{ bill.discount_percent }}%){% if bill.discount_reason %} – {{ bill.discount_reason }}{% endif %}</span>
+      <span>– ₹{{ bill.discount_amount }}</span>
+    </div>
+    {% endif %}
+    {% if bill.tax_percent > 0 %}
+    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:var(--ink-3);"><span>Tax ({{ bill.tax_percent }}%)</span><span>+ ₹{{ bill.tax_amount }}</span></div>
+    {% endif %}
+    <div style="display:flex;justify-content:space-between;padding:12px 16px;background:var(--ink);border-radius:8px;margin-top:8px;">
+      <span style="color:#fff;font-size:15px;font-weight:600;">Net Amount</span>
+      <span style="color:var(--teal-mid);font-family:'Fraunces',serif;font-size:22px;font-weight:600;">₹{{ bill.net_amount }}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13.5px;margin-top:8px;color:var(--green);"><span>Amount Paid</span><span>₹{{ bill.amount_paid }}</span></div>
+    {% if bill.balance_due > 0 %}
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:14px;font-weight:700;color:var(--rose);"><span>Balance Due</span><span>₹{{ bill.balance_due }}</span></div>
+    {% endif %}
+  </div>
+</div>
+
+{% if bill.balance_due > 0 %}
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header"><div class="card-title">Record Payment</div></div>
+  <div class="card-body">
+    <form method="post" action="/billing/{{ bill.pk }}/pay/">{% csrf_token %}
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label required">Amount (₹) — Balance: ₹{{ bill.balance_due }}</label>{{ payment_form.amount }}</div>
+      <div class="form-group"><label class="form-label required">Payment Method</label>{{ payment_form.payment_method }}</div>
+      <div class="form-group"><label class="form-label">Transaction / Ref. ID</label>{{ payment_form.transaction_id }}</div>
+      <div class="form-group"><label class="form-label">Notes</label>{{ payment_form.notes }}</div>
+    </div>
+    <button type="submit" class="btn btn-primary" style="margin-top:12px;">Record Payment</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% if payments %}
+<div class="card">
+  <div class="card-header"><div class="card-title">Payment History</div></div>
+  <table>
+    <thead><tr><th>Date & Time</th><th>Amount</th><th>Method</th><th>Ref. ID</th><th>Received By</th></tr></thead>
+    <tbody>
+      {% for p in payments %}
+      <tr>
+        <td>{{ p.paid_at|date:"d M Y H:i" }}</td>
+        <td style="color:var(--green);font-weight:600;">₹{{ p.amount }}</td>
+        <td>{{ p.get_payment_method_display }}</td>
+        <td style="font-family:monospace;font-size:12px;">{{ p.transaction_id|default:"—" }}</td>
+        <td>{{ p.received_by.get_full_name|default:p.received_by.username|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+</div>
+{% endblock %}

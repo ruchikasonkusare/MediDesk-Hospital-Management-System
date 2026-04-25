@@ -1,0 +1,137 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}<strong>{{ title }}</strong>{% endblock %}
+{% block topbar_actions %}<a href="/appointments/" class="btn btn-secondary">← Appointments</a>{% endblock %}
+
+{% block content %}
+<div style="max-width:700px;">
+
+  <!-- Validation alert -->
+  <div id="time-alert" class="alert-box alert-warning" style="display:none;margin-bottom:14px;">
+    ⚠ Appointment time cannot be in the past. Please select a future date and time.
+  </div>
+
+  <form method="post" id="appt-form">
+    {% csrf_token %}
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Appointment Details</div></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label required">Patient</label>
+            {{ form.patient }}
+            {% if form.patient.errors %}<div class="form-error">{{ form.patient.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label required">Doctor</label>
+            {{ form.doctor }}
+            {% if form.doctor.errors %}<div class="form-error">{{ form.doctor.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label required">Date</label>
+            {{ form.appointment_date }}
+            {% if form.appointment_date.errors %}<div class="form-error">{{ form.appointment_date.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label required">Time</label>
+            {{ form.appointment_time }}
+            <div id="slot-warning" style="display:none;font-size:11.5px;color:var(--rose);margin-top:3px;">⚠ This slot is already booked for this doctor.</div>
+            {% if form.appointment_time.errors %}<div class="form-error">{{ form.appointment_time.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            {{ form.appointment_type }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            {{ form.status }}
+          </div>
+          <div class="form-group full">
+            <label class="form-label required">Reason for Visit</label>
+            {{ form.reason }}
+            {% if form.reason.errors %}<div class="form-error">{{ form.reason.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Additional Notes</label>
+            {{ form.notes }}
+          </div>
+        </div>
+
+        <!-- Booked slots display -->
+        <div id="booked-slots-wrap" style="display:none;margin-top:12px;padding:10px 14px;background:var(--amber-light);border-radius:8px;">
+          <div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:6px;">Already booked slots for this doctor on selected date:</div>
+          <div id="booked-slots" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+      </div>
+    </div>
+
+    {% if form.non_field_errors %}
+    <div class="alert-box alert-danger" style="margin-bottom:14px;">
+      {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+    </div>
+    {% endif %}
+
+    <div style="display:flex;gap:10px;">
+      <button type="submit" class="btn btn-primary" id="submit-btn">Save Appointment</button>
+      <a href="/appointments/" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script>
+const doctorSel = document.querySelector('[name=doctor]');
+const dateSel = document.querySelector('[name=appointment_date]');
+const timeSel = document.querySelector('[name=appointment_time]');
+
+// Set min date to today
+dateSel.min = new Date().toISOString().split('T')[0];
+
+function checkPastTime() {
+  const d = dateSel.value, t = timeSel.value;
+  if (!d || !t) return;
+  const apptDt = new Date(d + 'T' + t);
+  const now = new Date();
+  const alert = document.getElementById('time-alert');
+  const btn = document.getElementById('submit-btn');
+  if (apptDt <= now) {
+    alert.style.display = 'flex';
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+  } else {
+    alert.style.display = 'none';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+}
+
+async function loadSlots() {
+  const doc = doctorSel.value, date = dateSel.value;
+  if (!doc || !date) return;
+  try {
+    const res = await fetch(`/api/doctor-slots/?doctor=${doc}&date=${date}`);
+    const data = await res.json();
+    const wrap = document.getElementById('booked-slots-wrap');
+    const slotsDiv = document.getElementById('booked-slots');
+    const warn = document.getElementById('slot-warning');
+    if (data.slots.length > 0) {
+      wrap.style.display = 'block';
+      slotsDiv.innerHTML = data.slots.map(s => `<span style="padding:3px 8px;background:white;border:1px solid var(--amber);border-radius:6px;font-size:11.5px;font-family:monospace;">${s}</span>`).join('');
+      // Check if current time is booked
+      if (timeSel.value && data.slots.includes(timeSel.value + ':00') || data.slots.includes(timeSel.value)) {
+        warn.style.display = 'block';
+      } else {
+        warn.style.display = 'none';
+      }
+    } else {
+      wrap.style.display = 'none';
+      warn.style.display = 'none';
+    }
+  } catch(e) {}
+}
+
+doctorSel.addEventListener('change', loadSlots);
+dateSel.addEventListener('change', () => { loadSlots(); checkPastTime(); });
+timeSel.addEventListener('change', () => { loadSlots(); checkPastTime(); });
+checkPastTime();
+</script>
+{% endblock %}

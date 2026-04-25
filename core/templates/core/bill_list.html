@@ -1,0 +1,48 @@
+{% extends 'core/base.html' %}
+{% block title %}Billing{% endblock %}
+{% block page_title %}<strong>Billing</strong>{% endblock %}
+{% block topbar_actions %}<a href="/billing/new/" class="btn btn-primary">+ Generate Bill</a>{% endblock %}
+{% block content %}
+<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+  <form method="get" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <div class="search-wrap">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" stroke-linecap="round" stroke-width="2"/></svg>
+      <input type="text" name="q" value="{{ q }}" placeholder="Patient name or bill no…" class="search-input">
+    </div>
+    <select name="status" class="form-input" style="width:auto;" onchange="this.form.submit()">
+      <option value="">All Statuses</option>
+      {% for val,label in status_choices %}<option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+    {% if q or status_filter %}<a href="/billing/" class="btn btn-secondary btn-sm">Clear</a>{% endif %}
+  </form>
+  <div style="margin-left:auto;font-size:13px;color:var(--ink-3);">Total Collected: <strong style="color:var(--green);">₹{{ total_collected }}</strong></div>
+</div>
+<div class="card">
+  <div class="table-wrap">
+    {% if bills %}
+    <table>
+      <thead><tr><th>Bill No.</th><th>Patient</th><th>Date</th><th>Gross</th><th>Discount</th><th>Net</th><th>Paid</th><th>Balance</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for bill in bills %}
+        <tr>
+          <td style="font-family:monospace;font-size:12px;color:var(--ink-3);">{{ bill.bill_number }}</td>
+          <td><a href="/patients/{{ bill.patient.pk }}/" style="color:var(--teal);font-weight:500;">{{ bill.patient.name }}</a><div style="font-size:11px;color:var(--ink-3);">{{ bill.patient.patient_id }}</div></td>
+          <td>{{ bill.bill_date|date:"d M Y" }}</td>
+          <td>₹{{ bill.gross_amount }}</td>
+          <td>{% if bill.discount_percent > 0 %}<span style="color:var(--green);">{{ bill.discount_percent }}%</span>{% else %}—{% endif %}</td>
+          <td style="font-weight:600;">₹{{ bill.net_amount }}</td>
+          <td style="color:var(--green);">₹{{ bill.amount_paid }}</td>
+          <td>{% if bill.balance_due > 0 %}<span style="color:var(--rose);font-weight:600;">₹{{ bill.balance_due }}</span>{% else %}<span style="color:var(--green);">—</span>{% endif %}</td>
+          <td><span class="badge badge-{{ bill.payment_status }}">{{ bill.get_payment_status_display }}</span></td>
+          <td><a href="/billing/{{ bill.pk }}/" class="btn btn-secondary btn-sm">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><p>No bills found.</p></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,175 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}<strong>{{ title }}</strong>{% endblock %}
+{% block topbar_actions %}
+{% if patient %}<a href="/patients/{{ patient.pk }}/" class="btn btn-secondary">← Back to Patient</a>
+{% else %}<a href="/patients/" class="btn btn-secondary">← Patients</a>{% endif %}
+{% endblock %}
+
+{% block content %}
+<div style="max-width:880px;">
+  <form method="post" id="patient-form" novalidate>
+    {% csrf_token %}
+
+    <!-- Personal Info -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Personal Information</div></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group full"><label class="form-label required">Full Name</label>{{ form.name }}{% if form.name.errors %}<div class="form-error">{{ form.name.errors.0 }}</div>{% endif %}</div>
+          <div class="form-group"><label class="form-label required">Date of Birth</label>{{ form.date_of_birth }}{% if form.date_of_birth.errors %}<div class="form-error">{{ form.date_of_birth.errors.0 }}</div>{% endif %}
+            <div id="age-display" style="font-size:11.5px;color:var(--teal);margin-top:2px;"></div>
+          </div>
+          <div class="form-group"><label class="form-label required">Gender</label>{{ form.gender }}</div>
+          <div class="form-group"><label class="form-label">Marital Status</label>{{ form.marital_status }}</div>
+          <div class="form-group"><label class="form-label">Blood Group</label>{{ form.blood_group }}</div>
+          <div class="form-group"><label class="form-label">Occupation</label>{{ form.occupation }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Contact Information</div></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label required">Phone (10 digits)</label>
+            {{ form.phone }}
+            <div id="phone-err" class="form-error" style="display:none;">Phone must be exactly 10 digits (numbers only).</div>
+            {% if form.phone.errors %}<div class="form-error">{{ form.phone.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Alternate Phone</label>
+            {{ form.alternate_phone }}
+            <div id="alt-phone-err" class="form-error" style="display:none;">Phone must be exactly 10 digits.</div>
+          </div>
+          <div class="form-group"><label class="form-label">Email</label>{{ form.email }}</div>
+          <div class="form-group full"><label class="form-label required">Address</label>{{ form.address }}</div>
+          <div class="form-group"><label class="form-label">City</label>{{ form.city }}</div>
+          <div class="form-group">
+            <label class="form-label">Pincode (6 digits)</label>
+            {{ form.pincode }}
+            <div id="pin-err" class="form-error" style="display:none;">Pincode must be exactly 6 digits.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Emergency Contact -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Emergency Contact</div></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label required">Name</label>{{ form.emergency_contact_name }}{% if form.emergency_contact_name.errors %}<div class="form-error">{{ form.emergency_contact_name.errors.0 }}</div>{% endif %}</div>
+          <div class="form-group">
+            <label class="form-label required">Phone (10 digits)</label>
+            {{ form.emergency_contact_phone }}
+            <div id="ec-phone-err" class="form-error" style="display:none;">Phone must be exactly 10 digits.</div>
+            {% if form.emergency_contact_phone.errors %}<div class="form-error">{{ form.emergency_contact_phone.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group"><label class="form-label">Relation</label>{{ form.emergency_contact_relation }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Medical History -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Medical History</div></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Known Allergies</label>{{ form.allergies }}</div>
+          <div class="form-group"><label class="form-label">Chronic Conditions</label>{{ form.chronic_conditions }}</div>
+          <div class="form-group"><label class="form-label">Current Medications</label>{{ form.current_medications }}</div>
+          <div class="form-group"><label class="form-label">Past Surgeries</label>{{ form.past_surgeries }}</div>
+          <div class="form-group full"><label class="form-label">Family Medical History</label>{{ form.family_history }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Insurance -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Insurance (Optional)</div></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Provider</label>{{ form.insurance_provider }}</div>
+          <div class="form-group"><label class="form-label">Policy Number</label>{{ form.insurance_number }}</div>
+          <div class="form-group"><label class="form-label">Validity Date</label>{{ form.insurance_validity }}</div>
+        </div>
+      </div>
+    </div>
+
+    {% if form.errors and not form.name.errors and not form.phone.errors %}
+    <div class="alert-box alert-danger" style="margin-bottom:14px;">Please fix the errors above.</div>
+    {% endif %}
+
+    <div style="display:flex;gap:10px;">
+      <button type="submit" class="btn btn-primary" id="submit-btn">{{ title }}</button>
+      <a href="/patients/" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script>
+// Age calculator from DOB
+const dobField = document.querySelector('[name=date_of_birth]');
+dobField.max = new Date().toISOString().split('T')[0];
+dobField.addEventListener('change', function() {
+  if (!this.value) return;
+  const dob = new Date(this.value), today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+  const el = document.getElementById('age-display');
+  if (age >= 0 && age <= 120) {
+    el.textContent = `Age: ${age} years`;
+  } else {
+    el.textContent = '⚠ Invalid date of birth';
+    el.style.color = 'var(--rose)';
+  }
+});
+
+// Phone validation helper
+function validatePhone(input, errId) {
+  input.addEventListener('input', function() {
+    this.value = this.value.replace(/\D/g, '').slice(0, 10);
+    const err = document.getElementById(errId);
+    if (this.value.length > 0 && this.value.length !== 10) {
+      err.style.display = 'block';
+    } else {
+      err.style.display = 'none';
+    }
+  });
+}
+validatePhone(document.querySelector('[name=phone]'), 'phone-err');
+validatePhone(document.querySelector('[name=alternate_phone]'), 'alt-phone-err');
+validatePhone(document.querySelector('[name=emergency_contact_phone]'), 'ec-phone-err');
+
+// Pincode
+const pinField = document.querySelector('[name=pincode]');
+if (pinField) {
+  pinField.addEventListener('input', function() {
+    this.value = this.value.replace(/\D/g, '').slice(0, 6);
+    document.getElementById('pin-err').style.display = (this.value.length > 0 && this.value.length !== 6) ? 'block' : 'none';
+  });
+}
+
+// Form submit validation
+document.getElementById('patient-form').addEventListener('submit', function(e) {
+  const phone = document.querySelector('[name=phone]').value;
+  const ecPhone = document.querySelector('[name=emergency_contact_phone]').value;
+  if (phone.length !== 10) {
+    e.preventDefault();
+    document.getElementById('phone-err').style.display = 'block';
+    document.querySelector('[name=phone]').focus();
+    return;
+  }
+  if (ecPhone.length !== 10) {
+    e.preventDefault();
+    document.getElementById('ec-phone-err').style.display = 'block';
+    document.querySelector('[name=emergency_contact_phone]').focus();
+    return;
+  }
+});
+</script>
+{% endblock %}

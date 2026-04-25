@@ -1,0 +1,100 @@
+{% extends 'core/base.html' %}
+{% block title %}Medical Record{% endblock %}
+{% block page_title %}<strong>Medical Record</strong>{% endblock %}
+{% block topbar_actions %}
+<a href="/records/" class="btn btn-secondary">← Records</a>
+{% if role == 'doctor' or role == 'admin' %}
+<a href="/prescriptions/new/?patient={{ record.patient.pk }}&record={{ record.pk }}" class="btn btn-primary">+ Prescription</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 300px;gap:16px;">
+  <div style="display:flex;flex-direction:column;gap:14px;">
+
+    <!-- Header -->
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div>
+            <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:600;">{{ record.patient.name }}</div>
+            <div style="font-size:12.5px;color:var(--ink-3);">{{ record.patient.patient_id }} · Seen by Dr. {{ record.doctor.name }} · {{ record.doctor.get_specialization_display }}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:500;">{{ record.visit_date|date:"F d, Y" }}</div>
+            {% if record.follow_up_date %}<div style="font-size:12px;color:var(--amber);margin-top:2px;">Follow-up: {{ record.follow_up_date|date:"M d, Y" }}</div>{% endif %}
+          </div>
+        </div>
+
+        {% if vitals %}
+        <div style="background:var(--surface);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;gap:14px;flex-wrap:wrap;">
+          <span style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;align-self:center;">Vitals:</span>
+          {% if vitals.temperature %}<span style="font-size:12.5px;background:white;padding:3px 8px;border-radius:5px;">🌡 {{ vitals.temperature }}°F</span>{% endif %}
+          {% if vitals.pulse_rate %}<span style="font-size:12.5px;background:white;padding:3px 8px;border-radius:5px;">💓 {{ vitals.pulse_rate }} bpm</span>{% endif %}
+          {% if vitals.bp_display != '—' %}<span style="font-size:12.5px;background:white;padding:3px 8px;border-radius:5px;">🩺 {{ vitals.bp_display }} mmHg</span>{% endif %}
+          {% if vitals.spo2 %}<span style="font-size:12.5px;background:white;padding:3px 8px;border-radius:5px;">💨 {{ vitals.spo2 }}%</span>{% endif %}
+          {% if vitals.weight %}<span style="font-size:12.5px;background:white;padding:3px 8px;border-radius:5px;">⚖ {{ vitals.weight }}kg</span>{% endif %}
+          {% if vitals.bmi %}<span style="font-size:12.5px;background:white;padding:3px 8px;border-radius:5px;">BMI: {{ vitals.bmi }}</span>{% endif %}
+        </div>
+        {% endif %}
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div><div class="detail-label">Chief Complaint</div><div style="margin-top:5px;padding:10px 12px;background:var(--surface);border-radius:7px;font-size:13.5px;">{{ record.chief_complaint }}</div></div>
+          {% if record.history_of_present_illness %}<div><div class="detail-label">History of Present Illness</div><div style="margin-top:5px;padding:10px 12px;background:var(--surface);border-radius:7px;font-size:13.5px;">{{ record.history_of_present_illness }}</div></div>{% endif %}
+          {% if record.examination_findings %}<div><div class="detail-label">Examination Findings</div><div style="margin-top:5px;padding:10px 12px;background:var(--surface);border-radius:7px;font-size:13.5px;">{{ record.examination_findings }}</div></div>{% endif %}
+          <div><div class="detail-label">Diagnosis{% if record.icd_code %} <span style="font-family:monospace;font-size:11px;background:var(--blue-light);color:var(--blue);padding:1px 6px;border-radius:4px;">{{ record.icd_code }}</span>{% endif %}</div><div style="margin-top:5px;padding:10px 12px;background:var(--blue-light);border-radius:7px;font-size:13.5px;color:var(--blue);font-weight:500;">{{ record.diagnosis }}</div></div>
+          {% if record.investigations_advised %}<div><div class="detail-label">Investigations Advised</div><div style="margin-top:5px;padding:10px 12px;background:var(--amber-light);border-radius:7px;font-size:13.5px;color:#7c4a00;">{{ record.investigations_advised }}</div></div>{% endif %}
+          <div><div class="detail-label">Treatment Plan</div><div style="margin-top:5px;padding:10px 12px;background:var(--surface);border-radius:7px;font-size:13.5px;">{{ record.treatment_plan }}</div></div>
+          {% if record.diet_advice %}<div><div class="detail-label">Diet Advice</div><div style="margin-top:5px;padding:10px 12px;background:var(--green-light);border-radius:7px;font-size:13.5px;color:var(--green);">{{ record.diet_advice }}</div></div>{% endif %}
+          {% if record.follow_up_notes %}<div><div class="detail-label">Follow-up Notes</div><div style="margin-top:5px;padding:10px 12px;background:var(--surface);border-radius:7px;font-size:13.5px;">{{ record.follow_up_notes }}</div></div>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Prescriptions -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Prescriptions</div>
+        {% if role == 'doctor' or role == 'admin' %}<a href="/prescriptions/new/?patient={{ record.patient.pk }}&record={{ record.pk }}" class="btn btn-primary btn-sm">+ Add Rx</a>{% endif %}
+      </div>
+      {% if prescriptions %}
+      {% for rx in prescriptions %}
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:13px;font-weight:600;">Rx — {{ rx.prescribed_date|date:"M d, Y" }}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="badge badge-{{ rx.status }}">{{ rx.get_status_display }}</span>
+            <a href="/prescriptions/{{ rx.pk }}/" class="btn btn-secondary btn-xs">View</a>
+          </div>
+        </div>
+        {% for item in rx.items.all %}
+        <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--surface);border-radius:5px;margin-bottom:3px;">
+          <div style="width:5px;height:5px;border-radius:50%;background:var(--teal);flex-shrink:0;"></div>
+          <span style="font-size:12.5px;font-weight:500;">{{ item.medicine_name }}</span>
+          <span style="font-size:12px;color:var(--ink-3);">{{ item.dosage }} · {{ item.get_frequency_display }}</span>
+          <span style="margin-left:auto;font-size:11.5px;color:var(--ink-3);">{{ item.duration_days }}d</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      {% else %}
+      <div class="empty-state" style="padding:28px;"><p>No prescriptions for this record.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Patient Snapshot -->
+  <div class="card" style="height:fit-content;">
+    <div class="card-header"><div class="card-title">Patient Info</div></div>
+    <div class="card-body" style="padding:14px;display:flex;flex-direction:column;gap:10px;">
+      <div><div class="detail-label">Name</div><div class="detail-value"><a href="/patients/{{ record.patient.pk }}/" style="color:var(--teal);">{{ record.patient.name }}</a></div></div>
+      <div><div class="detail-label">Age / Gender</div><div class="detail-value">{{ record.patient.age }} yrs / {{ record.patient.get_gender_display }}</div></div>
+      {% if record.patient.blood_group %}<div><div class="detail-label">Blood Group</div><div class="detail-value" style="color:var(--rose);font-weight:700;font-size:16px;">{{ record.patient.blood_group }}</div></div>{% endif %}
+      {% if record.patient.allergies %}<div style="padding:8px;background:var(--rose-light);border-radius:7px;"><div class="detail-label" style="color:var(--rose);">⚠ Allergies</div><div style="font-size:12.5px;color:var(--rose);margin-top:2px;">{{ record.patient.allergies }}</div></div>{% endif %}
+      {% if record.patient.chronic_conditions %}<div><div class="detail-label">Chronic Conditions</div><div style="font-size:12.5px;color:var(--ink-2);margin-top:2px;">{{ record.patient.chronic_conditions }}</div></div>{% endif %}
+      {% if record.patient.current_medications %}<div><div class="detail-label">Current Medications</div><div style="font-size:12.5px;color:var(--ink-2);margin-top:2px;">{{ record.patient.current_medications }}</div></div>{% endif %}
+      <div style="padding-top:10px;border-top:1px solid var(--border);"><a href="/patients/{{ record.patient.pk }}/" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center;">Full Patient Profile</a></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}<strong>{{ title }}</strong>{% endblock %}
+{% block topbar_actions %}<a href="/billing/" class="btn btn-secondary">← Bills</a>{% endblock %}
+{% block content %}
+<div style="max-width:800px;">
+<form method="post" id="bill-form">{% csrf_token %}
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header"><div class="card-title">Bill Details</div></div>
+  <div class="card-body">
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label required">Patient</label>{{ form.patient }}</div>
+      <div class="form-group"><label class="form-label">Linked Appointment</label>{{ form.appointment }}</div>
+      <div class="form-group"><label class="form-label required">Bill Date</label>{{ form.bill_date }}</div>
+      <div class="form-group"><label class="form-label">Payment Status</label>{{ form.payment_status }}</div>
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header"><div class="card-title">Charges</div></div>
+  <div class="card-body">
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Consultation (₹)</label>{{ form.consultation_charge }}</div>
+      <div class="form-group"><label class="form-label">Procedure (₹)</label>{{ form.procedure_charge }}</div>
+      <div class="form-group"><label class="form-label">Medicine (₹)</label>{{ form.medicine_charge }}</div>
+      <div class="form-group"><label class="form-label">Lab / Tests (₹)</label>{{ form.lab_charge }}</div>
+      <div class="form-group"><label class="form-label">Room / Bed (₹)</label>{{ form.room_charge }}</div>
+      <div class="form-group"><label class="form-label">Other (₹)</label>{{ form.other_charge }}</div>
+      <div class="form-group"><label class="form-label">Other Label</label>{{ form.other_charge_label }}</div>
+    </div>
+    <div id="bill-preview" style="margin-top:16px;padding:16px;background:var(--surface);border-radius:8px;display:none;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Gross Total</span><span id="gross">₹0</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;color:var(--green);"><span>Discount (<span id="disc-pct">0</span>%)</span><span id="disc-amt">– ₹0</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;color:var(--ink-3);"><span>Tax (<span id="tax-pct">0</span>%)</span><span id="tax-amt">+ ₹0</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;border-top:1px solid var(--border);padding-top:8px;"><span>Net Amount</span><span id="net">₹0</span></div>
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header"><div class="card-title">Discount & Tax</div></div>
+  <div class="card-body">
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Discount %</label>{{ form.discount_percent }}</div>
+      <div class="form-group"><label class="form-label">Discount Reason</label>{{ form.discount_reason }}</div>
+      <div class="form-group"><label class="form-label">GST / Tax %</label>{{ form.tax_percent }}</div>
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header"><div class="card-title">Payment</div></div>
+  <div class="card-body">
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Payment Method</label>{{ form.payment_method }}</div>
+      <div class="form-group"><label class="form-label">Amount Paid (₹)</label>{{ form.amount_paid }}</div>
+      <div class="form-group full"><label class="form-label">Notes</label>{{ form.notes }}</div>
+    </div>
+  </div>
+</div>
+{% if form.errors %}<div class="msg error" style="margin-bottom:12px;">{% for f,errs in form.errors.items %}{% for e in errs %}{{ e }} {% endfor %}{% endfor %}</div>{% endif %}
+<div style="display:flex;gap:12px;"><button type="submit" class="btn btn-primary">Generate Bill</button><a href="/billing/" class="btn btn-secondary">Cancel</a></div>
+</form>
+</div>
+<script>
+function calc(){
+  const fields=['consultation_charge','procedure_charge','medicine_charge','lab_charge','room_charge','other_charge'];
+  let gross=0;
+  fields.forEach(f=>{gross+=parseFloat(document.querySelector(`[name="${f}"]`).value||0);});
+  const disc=parseFloat(document.querySelector('[name="discount_percent"]').value||0);
+  const tax=parseFloat(document.querySelector('[name="tax_percent"]').value||0);
+  const discAmt=gross*disc/100;
+  const taxable=gross-discAmt;
+  const taxAmt=taxable*tax/100;
+  const net=taxable+taxAmt;
+  document.getElementById('gross').textContent='₹'+gross.toFixed(2);
+  document.getElementById('disc-pct').textContent=disc;
+  document.getElementById('disc-amt').textContent='– ₹'+discAmt.toFixed(2);
+  document.getElementById('tax-pct').textContent=tax;
+  document.getElementById('tax-amt').textContent='+ ₹'+taxAmt.toFixed(2);
+  document.getElementById('net').textContent='₹'+net.toFixed(2);
+  document.getElementById('bill-preview').style.display='block';
+}
+document.querySelectorAll('.form-input').forEach(el=>el.addEventListener('input',calc));
+calc();
+</script>
+{% endblock %}

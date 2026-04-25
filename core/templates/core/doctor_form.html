@@ -1,0 +1,73 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/doctors/" class="btn btn-secondary">← Doctors</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:760px;">
+  <form method="post">
+    {% csrf_token %}
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header"><div class="card-title">Doctor Information</div></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label class="form-label">Full Name *</label>
+            {{ form.name }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Specialization *</label>
+            {{ form.specialization }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">License Number *</label>
+            {{ form.license_number }}
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Qualifications *</label>
+            {{ form.qualification }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone *</label>
+            {{ form.phone }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email *</label>
+            {{ form.email }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Years of Experience</label>
+            {{ form.experience_years }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Consultation Fee (₹)</label>
+            {{ form.consultation_fee }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Available Days</label>
+            {{ form.available_days }}
+          </div>
+          <div class="form-group" style="align-self:flex-end;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:9px 0;">
+              {{ form.is_available }}
+              <span class="form-label" style="margin:0;">Currently Available</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if form.errors %}
+    <div class="message error" style="margin-bottom:16px;">Please fix the errors: {{ form.errors }}</div>
+    {% endif %}
+
+    <div style="display:flex;gap:12px;">
+      <button type="submit" class="btn btn-primary">{{ title }}</button>
+      <a href="/doctors/" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

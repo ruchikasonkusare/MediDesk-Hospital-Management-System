@@ -1,0 +1,63 @@
+{% extends 'core/base.html' %}
+{% block title %}Patients{% endblock %}
+{% block page_title %}Patients{% endblock %}
+
+{% block topbar_actions %}
+<a href="/patients/new/" class="btn btn-primary">
+  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+  Register Patient
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">All Patients <span style="color:var(--ink-3);font-weight:400;">({{ patients.count }})</span></div>
+    <form method="get" class="search-bar" style="margin:0;">
+      <div class="search-input-wrap">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" stroke-linecap="round" stroke-width="2"/></svg>
+        <input type="text" name="q" value="{{ q }}" placeholder="Search by name, ID or phone…" class="search-input">
+      </div>
+      <button type="submit" class="btn btn-secondary btn-sm">Search</button>
+      {% if q %}<a href="/patients/" class="btn btn-secondary btn-sm">Clear</a>{% endif %}
+    </form>
+  </div>
+  <div class="table-wrap">
+    {% if patients %}
+    <table>
+      <thead><tr>
+        <th>Patient ID</th><th>Name</th><th>Age / Gender</th><th>Blood Group</th><th>Phone</th><th>Registered</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        {% for patient in patients %}
+        <tr>
+          <td style="font-family:monospace;font-size:12px;color:var(--ink-3);">{{ patient.patient_id }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--teal-light);color:var(--teal);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0;">{{ patient.name|first }}</div>
+              <a href="/patients/{{ patient.pk }}/" style="font-weight:500;color:var(--ink);">{{ patient.name }}</a>
+            </div>
+          </td>
+          <td>{{ patient.age }} yrs / {{ patient.get_gender_display }}</td>
+          <td>{% if patient.blood_group %}<span class="badge badge-scheduled">{{ patient.blood_group }}</span>{% else %}–{% endif %}</td>
+          <td>{{ patient.phone }}</td>
+          <td style="font-size:12px;color:var(--ink-3);">{{ patient.registered_at|date:"M d, Y" }}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <a href="/patients/{{ patient.pk }}/" class="btn btn-secondary btn-sm">View</a>
+              <a href="/patients/{{ patient.pk }}/edit/" class="btn btn-secondary btn-sm">Edit</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <p>No patients found.{% if q %} Try a different search.{% endif %}</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

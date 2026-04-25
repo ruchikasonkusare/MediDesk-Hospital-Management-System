@@ -1,0 +1,80 @@
+{% extends 'core/base.html' %}
+{% block title %}My Dashboard{% endblock %}
+{% block page_title %}<strong>My Dashboard</strong>{% endblock %}
+{% block content %}
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+  <div class="stat-card teal"><div class="icon-wrap"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div><div class="label">Today's Patients</div><div class="value">{{ today_appts.count }}</div><div class="sub">Scheduled today</div></div>
+  <div class="stat-card blue"><div class="icon-wrap"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div><div class="label">My Patients</div><div class="value">{{ total_patients }}</div><div class="sub">All time</div></div>
+  <div class="stat-card amber"><div class="icon-wrap"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div><div class="label">Pending Records</div><div class="value">{{ pending_records }}</div><div class="sub">Needs documentation</div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 320px;gap:20px;">
+  <div class="card">
+    <div class="card-header"><div class="card-title">Today's Appointments</div></div>
+    <div class="table-wrap">
+      {% if today_appts %}
+      <table>
+        <thead><tr><th>Token</th><th>Time</th><th>Patient</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for appt in today_appts %}
+          <tr>
+            <td style="font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--teal);">#{{ appt.token_number|default:"—" }}</td>
+            <td>{{ appt.appointment_time|time:"g:i A" }}</td>
+            <td><a href="/patients/{{ appt.patient.pk }}/" style="color:var(--teal);font-weight:500;">{{ appt.patient.name }}</a><div style="font-size:11px;color:var(--ink-3);">{{ appt.patient.age }}y · {{ appt.patient.get_gender_display }}</div></td>
+            <td><span class="badge badge-confirmed">{{ appt.get_appointment_type_display }}</span></td>
+            <td><span class="badge badge-{{ appt.status }}">{{ appt.get_status_display }}</span></td>
+            <td>
+              <div style="display:flex;gap:5px;">
+                {% if not appt.vitals %}<a href="/appointments/{{ appt.pk }}/vitals/" class="btn btn-warning btn-xs">Vitals</a>{% endif %}
+                {% if not appt.medical_record %}<a href="/records/new/?patient={{ appt.patient.pk }}&appointment={{ appt.pk }}" class="btn btn-primary btn-xs">Add Record</a>{% endif %}
+                <form method="post" action="/appointments/{{ appt.pk }}/status/" style="display:inline;">
+                  {% csrf_token %}<input type="hidden" name="status" value="in_progress"><input type="hidden" name="next" value="/dashboard/">
+                  {% if appt.status == 'confirmed' %}<button type="submit" class="btn btn-success btn-xs">Start</button>{% endif %}
+                </form>
+                <form method="post" action="/appointments/{{ appt.pk }}/status/" style="display:inline;">
+                  {% csrf_token %}<input type="hidden" name="status" value="completed"><input type="hidden" name="next" value="/dashboard/">
+                  {% if appt.status == 'in_progress' %}<button type="submit" class="btn btn-success btn-xs">Complete</button>{% endif %}
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state"><p>No appointments today.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Upcoming (7 days)</div></div>
+      <div style="padding:0;">
+        {% for appt in upcoming %}
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);">
+          <div style="width:36px;height:36px;background:var(--teal-light);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--teal);font-family:'Fraunces',serif;font-size:14px;font-weight:600;flex-shrink:0;">{{ appt.appointment_date|date:"d" }}</div>
+          <div><div style="font-size:13px;font-weight:500;">{{ appt.patient.name }}</div><div style="font-size:11px;color:var(--ink-3);">{{ appt.appointment_date|date:"M d" }} · {{ appt.appointment_time|time:"g:i A" }}</div></div>
+        </div>
+        {% empty %}
+        <div style="padding:20px;text-align:center;color:var(--ink-3);font-size:13px;">No upcoming appointments</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Weekly Activity</div></div>
+      <div class="card-body">
+        <div style="display:flex;align-items:flex-end;gap:5px;height:70px;">
+          {% for day in chart_data %}
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
+            <div style="width:100%;min-height:4px;background:{% if day.count > 0 %}var(--teal-light){% else %}var(--surface-2){% endif %};border-radius:3px 3px 0 0;" title="{{ day.count }} appointments" style="height:{% if day.count > 0 %}{{ day.count }}0px{% else %}4px{% endif %};"></div>
+            <span style="font-size:10px;color:var(--ink-3);">{{ day.date }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

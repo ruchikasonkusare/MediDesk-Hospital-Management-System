@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"><title>Bill {{ bill.bill_number }}</title>
+  <style>
+    body{font-family:'Segoe UI',sans-serif;max-width:650px;margin:30px auto;padding:20px;color:#1a1a1a;font-size:13px;}
+    .header{text-align:center;border-bottom:2px solid #0b7a6e;padding-bottom:14px;margin-bottom:20px;}
+    .brand{font-size:26px;font-weight:700;color:#0b7a6e;}
+    h2{font-size:16px;margin:0;color:#555;}
+    .meta{display:flex;justify-content:space-between;margin-bottom:16px;font-size:12.5px;}
+    table{width:100%;border-collapse:collapse;margin-bottom:12px;}
+    th{background:#f0f9f8;text-align:left;padding:7px 10px;font-size:11px;text-transform:uppercase;color:#0b7a6e;border-bottom:1px solid #cde8e5;}
+    td{padding:7px 10px;border-bottom:1px solid #eee;}
+    .total-row td{font-weight:700;border-top:2px solid #0b7a6e;font-size:14px;background:#e6f4f2;}
+    .footer{text-align:center;font-size:11px;color:#888;margin-top:30px;border-top:1px solid #eee;padding-top:10px;}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+    .paid{background:#e6f5ec;color:#1a7a3e;} .unpaid{background:#fdecea;color:#c0392b;}
+    @media print{.no-print{display:none;}}
+  </style>
+</head>
+<body>
+<div class="no-print" style="margin-bottom:16px;">
+  <button onclick="window.print()" style="padding:8px 20px;background:#0b7a6e;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">🖨 Print</button>
+  <button onclick="window.close()" style="margin-left:10px;padding:8px 20px;background:#eee;border:none;border-radius:6px;cursor:pointer;font-size:13px;">✕ Close</button>
+</div>
+<div class="header">
+  <div class="brand">MediDesk</div>
+  <h2>Healthcare Management System</h2>
+  <div style="font-size:11px;color:#888;margin-top:4px;">Bill / Receipt</div>
+</div>
+<div class="meta">
+  <div><b>Bill No:</b> {{ bill.bill_number }}<br><b>Date:</b> {{ bill.bill_date|date:"F d, Y" }}<br><b>Status:</b> <span class="badge {{ bill.payment_status }}">{{ bill.get_payment_status_display }}</span></div>
+  <div style="text-align:right;"><b>Patient:</b> {{ bill.patient.name }}<br><b>ID:</b> {{ bill.patient.patient_id }}<br><b>Phone:</b> {{ bill.patient.phone }}</div>
+</div>
+{% if bill.appointment %}
+<div style="margin-bottom:12px;font-size:12.5px;background:#f5f5f5;padding:8px 12px;border-radius:6px;">
+  <b>Doctor:</b> Dr. {{ bill.appointment.doctor.name }} ({{ bill.appointment.doctor.get_specialization_display }}) &nbsp;|&nbsp;
+  <b>Date:</b> {{ bill.appointment.appointment_date|date:"M d, Y" }} {{ bill.appointment.appointment_time|time:"g:i A" }}
+</div>
+{% endif %}
+<table>
+  <thead><tr><th>Description</th><th style="text-align:right;">Amount (₹)</th></tr></thead>
+  <tbody>
+    {% if bill.consultation_charge > 0 %}<tr><td>Consultation Fee</td><td style="text-align:right;">{{ bill.consultation_charge }}</td></tr>{% endif %}
+    {% if bill.procedure_charge > 0 %}<tr><td>Procedure Charges</td><td style="text-align:right;">{{ bill.procedure_charge }}</td></tr>{% endif %}
+    {% if bill.medicine_charge > 0 %}<tr><td>Medicine / Pharmacy</td><td style="text-align:right;">{{ bill.medicine_charge }}</td></tr>{% endif %}
+    {% if bill.lab_charge > 0 %}<tr><td>Lab / Investigations</td><td style="text-align:right;">{{ bill.lab_charge }}</td></tr>{% endif %}
+    {% if bill.room_charge > 0 %}<tr><td>Room Charges</td><td style="text-align:right;">{{ bill.room_charge }}</td></tr>{% endif %}
+    {% if bill.other_charge > 0 %}<tr><td>{{ bill.other_charge_label|default:"Other Charges" }}</td><td style="text-align:right;">{{ bill.other_charge }}</td></tr>{% endif %}
+    <tr><td colspan="2" style="padding:4px;"></td></tr>
+    <tr><td>Gross Total</td><td style="text-align:right;">₹{{ bill.gross_amount }}</td></tr>
+    {% if bill.discount_amount > 0 %}<tr><td>Discount ({{ bill.discount_percent }}%{% if bill.discount_reason %} – {{ bill.discount_reason }}{% endif %})</td><td style="text-align:right;color:green;">−₹{{ bill.discount_amount }}</td></tr>{% endif %}
+    {% if bill.tax_amount > 0 %}<tr><td>Tax ({{ bill.tax_percent }}%)</td><td style="text-align:right;">+₹{{ bill.tax_amount }}</td></tr>{% endif %}
+    <tr class="total-row"><td>NET AMOUNT</td><td style="text-align:right;">₹{{ bill.net_amount }}</td></tr>
+  </tbody>
+</table>
+{% if payments %}
+<div style="font-size:12px;font-weight:600;margin-bottom:6px;">Payments Received:</div>
+{% for p in payments %}
+<div style="font-size:12px;padding:5px 10px;background:#f9f9f9;margin-bottom:3px;border-radius:4px;">
+  {{ p.paid_at|date:"M d, Y g:i A" }} — ₹{{ p.amount }} via {{ p.get_payment_method_display }}{% if p.transaction_id %} (Ref: {{ p.transaction_id }}){% endif %}
+</div>
+{% endfor %}
+{% endif %}
+<div style="margin-top:12px;font-size:13px;">
+  <span>Amount Paid: <b style="color:green;">₹{{ bill.amount_paid }}</b></span> &nbsp;&nbsp;
+  <span>Balance Due: <b style="color:{% if bill.balance_due > 0 %}red{% else %}green{% endif %};">₹{{ bill.balance_due }}</b></span>
+</div>
+{% if bill.notes %}<div style="margin-top:10px;font-size:12px;color:#666;">Notes: {{ bill.notes }}</div>{% endif %}
+<div class="footer">Generated by MediDesk &nbsp;·&nbsp; {{ bill.bill_date|date:"F d, Y" }}<br>Thank you for choosing our healthcare services.</div>
+</body></html>

@@ -1,0 +1,256 @@
+{% extends 'core/base.html' %}
+{% block title %}Analytics{% endblock %}
+{% block page_title %}<strong>Analytics</strong> Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+.chart-card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; }
+.chart-title { font-size:13px; font-weight:600; color:var(--ink); margin-bottom:16px; }
+.charts-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+.charts-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px; }
+.export-bar { display:flex; gap:10px; margin-bottom:20px; align-items:center; }
+.kpi-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:20px; }
+.kpi { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:16px; text-align:center; box-shadow:var(--shadow); }
+.kpi-val { font-family:'Fraunces',serif; font-size:28px; font-weight:600; color:var(--ink); }
+.kpi-lbl { font-size:11px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.4px; margin-top:2px; }
+.kpi.teal .kpi-val { color:var(--teal); }
+.kpi.blue .kpi-val { color:var(--blue); }
+.kpi.amber .kpi-val { color:var(--amber); }
+.kpi.green .kpi-val { color:var(--green); }
+.kpi.rose .kpi-val { color:var(--rose); }
+@media(max-width:900px){ .charts-grid-2,.charts-grid-3,.kpi-grid{ grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block topbar_actions %}
+<a href="/export/patients/excel/" class="btn btn-green">⬇ Patients Excel</a>
+<a href="/export/billing/excel/" class="btn btn-secondary">⬇ Billing Excel</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPI Cards -->
+<div class="kpi-grid" id="kpi-grid">
+  <div class="kpi teal"><div class="kpi-val" id="k-patients">—</div><div class="kpi-lbl">Total Patients</div></div>
+  <div class="kpi blue"><div class="kpi-val" id="k-doctors">—</div><div class="kpi-lbl">Active Doctors</div></div>
+  <div class="kpi amber"><div class="kpi-val" id="k-appointments">—</div><div class="kpi-lbl">Total Appointments</div></div>
+  <div class="kpi green"><div class="kpi-val" id="k-revenue">—</div><div class="kpi-lbl">Total Revenue (₹)</div></div>
+  <div class="kpi rose"><div class="kpi-val" id="k-pending">—</div><div class="kpi-lbl">Pending Bills</div></div>
+</div>
+
+<!-- Row 1: Revenue + Daily Appointments -->
+<div class="charts-grid-2">
+  <div class="chart-card">
+    <div class="chart-title">Monthly Revenue (₹)</div>
+    <canvas id="revenueChart" height="200"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Daily Appointments (Last 30 Days)</div>
+    <canvas id="dailyChart" height="200"></canvas>
+  </div>
+</div>
+
+<!-- Row 2: Status Breakdown + Diagnoses + Doctor Utilization -->
+<div class="charts-grid-3">
+  <div class="chart-card">
+    <div class="chart-title">Appointment Status Breakdown</div>
+    <canvas id="statusChart" height="220"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Top Diagnoses</div>
+    <canvas id="diagnosisChart" height="220"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Doctor Workload</div>
+    <canvas id="doctorChart" height="220"></canvas>
+  </div>
+</div>
+
+<!-- Row 3: Revenue by Method + No-show Rate + Monthly Patients -->
+<div class="charts-grid-3">
+  <div class="chart-card">
+    <div class="chart-title">Revenue by Payment Method</div>
+    <canvas id="methodChart" height="220"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">No-Show Rate by Doctor (%)</div>
+    <canvas id="noshowChart" height="220"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">New Patients per Month</div>
+    <canvas id="patientsChart" height="220"></canvas>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const TEAL   = '#1aa395';
+const BLUE   = '#1a56b0';
+const AMBER  = '#e87c1e';
+const GREEN  = '#1a7a3e';
+const ROSE   = '#c0392b';
+const PURPLE = '#7c3aed';
+const COLORS = [TEAL,BLUE,AMBER,GREEN,ROSE,PURPLE,'#0891b2','#d97706','#dc2626','#16a34a'];
+
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.size   = 12;
+Chart.defaults.color       = '#7a8699';
+Chart.defaults.plugins.legend.display = true;
+
+function fmt(n){ return n>=1000 ? (n/1000).toFixed(1)+'k' : n; }
+function fmtRupee(n){ return '₹'+n.toLocaleString('en-IN',{maximumFractionDigits:0}); }
+
+async function loadData(){
+  const [summary, charts] = await Promise.all([
+    fetch('/api/analytics/summary/', {headers:{'X-Requested-With':'XMLHttpRequest'}}).then(r=>r.json()),
+    fetch('/api/analytics/charts/?months=6', {headers:{'X-Requested-With':'XMLHttpRequest'}}).then(r=>r.json()),
+  ]);
+
+  // KPIs
+  document.getElementById('k-patients').textContent     = summary.total_patients;
+  document.getElementById('k-doctors').textContent      = summary.total_doctors;
+  document.getElementById('k-appointments').textContent = summary.total_appointments;
+  document.getElementById('k-revenue').textContent      = fmtRupee(summary.total_revenue);
+  document.getElementById('k-pending').textContent      = summary.unpaid_bills;
+
+  // Revenue
+  new Chart(document.getElementById('revenueChart'),{
+    type:'bar',
+    data:{
+      labels: charts.monthly_revenue.map(d=>d.month),
+      datasets:[{
+        label:'Revenue (₹)',
+        data: charts.monthly_revenue.map(d=>d.revenue),
+        backgroundColor: TEAL+'33',
+        borderColor: TEAL,
+        borderWidth:2, borderRadius:6,
+      }]
+    },
+    options:{ plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:fmtRupee}}} }
+  });
+
+  // Daily
+  new Chart(document.getElementById('dailyChart'),{
+    type:'line',
+    data:{
+      labels: charts.daily_appointments.map(d=>d.date),
+      datasets:[{
+        label:'Appointments',
+        data: charts.daily_appointments.map(d=>d.count),
+        borderColor:BLUE, backgroundColor:BLUE+'22',
+        fill:true, tension:.4, pointRadius:3,
+      }]
+    },
+    options:{ plugins:{legend:{display:false}}, scales:{x:{ticks:{maxTicksLimit:10}}} }
+  });
+
+  // Status donut
+  const statusMap = {'scheduled':'Scheduled','confirmed':'Confirmed','completed':'Completed',
+                     'cancelled':'Cancelled','in_progress':'In Progress','no_show':'No Show'};
+  const statusColors = {scheduled:BLUE,confirmed:TEAL,completed:GREEN,
+                        cancelled:ROSE,in_progress:AMBER,no_show:'#94a3b8'};
+  new Chart(document.getElementById('statusChart'),{
+    type:'doughnut',
+    data:{
+      labels: charts.status_breakdown.map(d=>statusMap[d.status]||d.status),
+      datasets:[{
+        data: charts.status_breakdown.map(d=>d.count),
+        backgroundColor: charts.status_breakdown.map(d=>statusColors[d.status]||PURPLE),
+        borderWidth:2, borderColor:'#fff',
+      }]
+    },
+    options:{ cutout:'65%', plugins:{legend:{position:'bottom',labels:{boxWidth:10}}} }
+  });
+
+  // Diagnoses horizontal bar
+  const top10 = charts.top_diagnoses.slice(0,8);
+  new Chart(document.getElementById('diagnosisChart'),{
+    type:'bar',
+    data:{
+      labels: top10.map(d=>d.diagnosis.length>22 ? d.diagnosis.slice(0,22)+'…' : d.diagnosis),
+      datasets:[{
+        data: top10.map(d=>d.count),
+        backgroundColor: AMBER+'55', borderColor:AMBER,
+        borderWidth:1.5, borderRadius:4,
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{stepSize:1}},y:{ticks:{font:{size:10}}}},
+    }
+  });
+
+  // Doctor workload
+  new Chart(document.getElementById('doctorChart'),{
+    type:'bar',
+    data:{
+      labels: charts.doctor_utilization.map(d=>d.doctor__name),
+      datasets:[{
+        label:'Appointments',
+        data: charts.doctor_utilization.map(d=>d.count),
+        backgroundColor:COLORS,
+        borderRadius:4, borderWidth:0,
+      }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{y:{ticks:{stepSize:1}},x:{ticks:{font:{size:10}}}},
+    }
+  });
+
+  // Revenue by method
+  new Chart(document.getElementById('methodChart'),{
+    type:'pie',
+    data:{
+      labels: charts.revenue_by_method.map(d=>d.payment_method.replace('_',' ').toUpperCase()),
+      datasets:[{
+        data: charts.revenue_by_method.map(d=>parseFloat(d.total)),
+        backgroundColor:[TEAL,BLUE,AMBER,GREEN,ROSE,PURPLE],
+        borderWidth:2, borderColor:'#fff',
+      }]
+    },
+    options:{ plugins:{legend:{position:'bottom',labels:{boxWidth:10}}} }
+  });
+
+  // No-show rate
+  new Chart(document.getElementById('noshowChart'),{
+    type:'bar',
+    data:{
+      labels: charts.no_show_by_doctor.map(d=>d.doctor__name),
+      datasets:[{
+        label:'No-show %',
+        data: charts.no_show_by_doctor.map(d=>d.no_show_rate),
+        backgroundColor: ROSE+'55', borderColor:ROSE,
+        borderWidth:1.5, borderRadius:4,
+      }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{y:{max:100,ticks:{callback:v=>v+'%'}},x:{ticks:{font:{size:10}}}},
+    }
+  });
+
+  // New patients
+  new Chart(document.getElementById('patientsChart'),{
+    type:'line',
+    data:{
+      labels: charts.monthly_patients.map(d=>d.month),
+      datasets:[{
+        label:'New Patients',
+        data: charts.monthly_patients.map(d=>d.count),
+        borderColor:GREEN, backgroundColor:GREEN+'22',
+        fill:true, tension:.4, pointRadius:4,
+      }]
+    },
+    options:{ plugins:{legend:{display:false}}, scales:{y:{ticks:{stepSize:1}}} }
+  });
+}
+
+// Session-auth: pass CSRF for API calls
+const csrfCookie = document.cookie.split('; ').find(r=>r.startsWith('csrftoken='));
+const csrfToken  = csrfCookie ? csrfCookie.split('=')[1] : '';
+
+loadData();
+</script>
+{% endblock %}

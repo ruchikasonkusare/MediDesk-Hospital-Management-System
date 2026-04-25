@@ -1,0 +1,49 @@
+{% extends 'core/base.html' %}
+{% block title %}Record Vitals{% endblock %}
+{% block page_title %}<strong>Record Vital Signs</strong>{% endblock %}
+{% block topbar_actions %}<a href="/appointments/" class="btn btn-secondary">← Appointments</a>{% endblock %}
+{% block content %}
+<div style="max-width:700px;">
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-body">
+    <div style="display:flex;gap:16px;align-items:center;">
+      <div style="width:44px;height:44px;border-radius:12px;background:var(--teal-light);color:var(--teal);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;">{{ appt.patient.name|first }}</div>
+      <div>
+        <div style="font-weight:600;font-size:15px;">{{ appt.patient.name }}</div>
+        <div style="font-size:12px;color:var(--ink-3);">Token #{{ appt.token_number }} · Dr. {{ appt.doctor.name }} · {{ appt.appointment_date|date:"d M Y" }} {{ appt.appointment_time|time:"g:i A" }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+<form method="post">{% csrf_token %}
+<div class="card">
+  <div class="card-header"><div class="card-title">{% if existing %}Update{% else %}Record{% endif %} Vital Signs</div></div>
+  <div class="card-body">
+    <div class="form-grid-3">
+      <div class="form-group"><label class="form-label">Weight (kg)</label>{{ form.weight_kg }}</div>
+      <div class="form-group"><label class="form-label">Height (cm)</label>{{ form.height_cm }}</div>
+      <div class="form-group"><label class="form-label">Temperature (°F)</label>{{ form.temperature_f }}</div>
+      <div class="form-group"><label class="form-label">BP Systolic</label>{{ form.bp_systolic }}</div>
+      <div class="form-group"><label class="form-label">BP Diastolic</label>{{ form.bp_diastolic }}</div>
+      <div class="form-group"><label class="form-label">Pulse (bpm)</label>{{ form.pulse_bpm }}</div>
+      <div class="form-group"><label class="form-label">SpO2 (%)</label>{{ form.spo2_percent }}</div>
+      <div class="form-group"><label class="form-label">Resp. Rate (/min)</label>{{ form.respiratory_rate }}</div>
+      <div class="form-group"><label class="form-label">Blood Sugar (mg/dL)</label>{{ form.blood_sugar_mgdl }}</div>
+    </div>
+    <div id="bmi-display" style="margin-top:12px;padding:10px;background:var(--teal-light);border-radius:8px;font-size:13px;color:var(--teal);display:none;">BMI: <strong id="bmi-val"></strong></div>
+    <div class="form-group full" style="margin-top:12px;"><label class="form-label">Notes</label>{{ form.notes }}</div>
+  </div>
+</div>
+<div style="display:flex;gap:12px;margin-top:16px;"><button type="submit" class="btn btn-primary">Save Vitals</button><a href="/appointments/" class="btn btn-secondary">Cancel</a></div>
+</form>
+</div>
+<script>
+function calcBMI(){
+  const w=parseFloat(document.querySelector('[name="weight_kg"]').value||0);
+  const h=parseFloat(document.querySelector('[name="height_cm"]').value||0);
+  if(w>0&&h>0){const bmi=(w/((h/100)**2)).toFixed(1);document.getElementById('bmi-val').textContent=bmi;document.getElementById('bmi-display').style.display='block';}
+}
+document.querySelector('[name="weight_kg"]').addEventListener('input',calcBMI);
+document.querySelector('[name="height_cm"]').addEventListener('input',calcBMI);
+</script>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}<strong>{{ title }}</strong>{% endblock %}
+{% block topbar_actions %}<a href="/records/" class="btn btn-secondary">← Records</a>{% endblock %}
+{% block content %}
+<div style="max-width:820px;">
+  <form method="post">
+    {% csrf_token %}
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Visit Details</div></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label required">Patient</label>{{ form.patient }}</div>
+          <div class="form-group"><label class="form-label required">Doctor</label>{{ form.doctor }}</div>
+          <div class="form-group"><label class="form-label required">Visit Date</label>{{ form.visit_date }}</div>
+          <div class="form-group"><label class="form-label">Linked Appointment</label>{{ form.appointment }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Clinical Notes</div></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group full"><label class="form-label required">Chief Complaint</label>{{ form.chief_complaint }}</div>
+          <div class="form-group full"><label class="form-label">History of Present Illness</label>{{ form.history_of_present_illness }}</div>
+          <div class="form-group full"><label class="form-label">Examination Findings</label>{{ form.examination_findings }}</div>
+          <div class="form-group"><label class="form-label required">Diagnosis</label>{{ form.diagnosis }}</div>
+          <div class="form-group"><label class="form-label">ICD-10 Code</label>{{ form.icd_code }}</div>
+          <div class="form-group full"><label class="form-label">Investigations Advised (Lab, X-Ray, etc.)</label>{{ form.investigations_advised }}</div>
+          <div class="form-group full"><label class="form-label required">Treatment Plan</label>{{ form.treatment_plan }}</div>
+          <div class="form-group full"><label class="form-label">Diet Advice</label>{{ form.diet_advice }}</div>
+          <div class="form-group"><label class="form-label">Follow-up Date</label>{{ form.follow_up_date }}</div>
+          <div class="form-group"><label class="form-label">Follow-up Notes</label>{{ form.follow_up_notes }}</div>
+        </div>
+      </div>
+    </div>
+    {% if form.errors %}<div class="alert-box alert-danger" style="margin-bottom:14px;">Please fix the errors above.</div>{% endif %}
+    <div style="display:flex;gap:10px;">
+      <button type="submit" class="btn btn-primary">Save Record</button>
+      <a href="/records/" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

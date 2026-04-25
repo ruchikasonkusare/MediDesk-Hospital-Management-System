@@ -1,0 +1,126 @@
+{% extends 'core/base.html' %}
+{% block title %}Appointments{% endblock %}
+{% block page_title %}<strong>Appointments</strong>{% endblock %}
+
+{% block topbar_actions %}
+{% if role != 'doctor' and role != 'nurse' and role != 'pharmacist' %}
+<a href="/appointments/new/" class="btn btn-primary">+ Schedule</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+  <form method="get" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <select name="status" class="form-input" style="width:auto;font-size:13px;" onchange="this.form.submit()">
+      <option value="">All Statuses</option>
+      {% for val,label in status_choices %}<option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <input type="date" name="date" value="{{ date_filter }}" class="form-input" style="width:auto;" onchange="this.form.submit()">
+    {% if doctors %}
+    <select name="doctor" class="form-input" style="width:auto;font-size:13px;" onchange="this.form.submit()">
+      <option value="">All Doctors</option>
+      {% for d in doctors %}<option value="{{ d.pk }}" {% if doctor_filter == d.pk|stringformat:"s" %}selected{% endif %}>Dr. {{ d.name }}</option>{% endfor %}
+    </select>
+    {% endif %}
+    {% if status_filter or date_filter or doctor_filter %}<a href="/appointments/" class="btn btn-secondary btn-sm">✕ Clear</a>{% endif %}
+  </form>
+  <span style="margin-left:auto;font-size:13px;color:var(--ink-3);">{{ appointments.count }} results</span>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    {% if appointments %}
+    <table>
+      <thead><tr>
+        <th>Token</th><th>Patient</th><th>Doctor</th><th>Date</th><th>Time</th><th>Type</th><th>Status</th><th>Bill</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        {% for appt in appointments %}
+        <tr>
+          <td style="font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--teal);">
+            {% if appt.token_number %}#{{ appt.token_number }}{% else %}—{% endif %}
+          </td>
+          <td>
+            <a href="/patients/{{ appt.patient.pk }}/" style="color:var(--teal);font-weight:500;">{{ appt.patient.name }}</a>
+            <div style="font-size:11px;color:var(--ink-3);">{{ appt.patient.patient_id }} · {{ appt.patient.age }}y</div>
+          </td>
+          <td>
+            <div style="font-size:13px;font-weight:500;">Dr. {{ appt.doctor.name }}</div>
+            <div style="font-size:11px;color:var(--ink-3);">{{ appt.doctor.get_specialization_display }}</div>
+          </td>
+          <td>{{ appt.appointment_date|date:"M d, Y" }}</td>
+          <td>{{ appt.appointment_time|time:"g:i A" }}</td>
+          <td><span class="badge badge-confirmed" style="font-size:10px;">{{ appt.get_appointment_type_display }}</span></td>
+          <td><span class="badge badge-{{ appt.status }}">{{ appt.get_status_display }}</span></td>
+          <td>
+            {% if appt.bill %}
+              <a href="/bills/{{ appt.bill.pk }}/" class="badge badge-{{ appt.bill.payment_status }}" style="font-size:10px;">{{ appt.bill.get_payment_status_display }}</a>
+            {% elif role != 'doctor' %}
+              <a href="/bills/new/?appointment={{ appt.pk }}&patient={{ appt.patient.pk }}" class="btn btn-warning btn-xs">Bill</a>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;">
+              {% if role == 'nurse' or role == 'admin' %}
+                {% if not appt.vitals %}
+                <a href="/appointments/{{ appt.pk }}/vitals/" class="btn btn-warning btn-xs" title="Record Vitals">Vitals</a>
+                {% endif %}
+              {% endif %}
+
+              {% if role == 'doctor' or role == 'admin' %}
+                {% if not appt.medical_record %}
+                <a href="/records/new/?patient={{ appt.patient.pk }}&appointment={{ appt.pk }}" class="btn btn-primary btn-xs">Record</a>
+                {% else %}
+                <a href="/records/{{ appt.medical_record.pk }}/" class="btn btn-secondary btn-xs">View Rec</a>
+                {% endif %}
+              {% endif %}
+
+              {% if role == 'admin' or role == 'receptionist' %}
+              <div style="position:relative;display:inline-block;">
+                <button class="btn btn-secondary btn-xs" onclick="toggleDD({{ appt.pk }})">Status ▾</button>
+                <div id="dd-{{ appt.pk }}" style="display:none;position:absolute;right:0;top:100%;background:white;border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-md);z-index:100;min-width:150px;padding:4px;">
+                  {% for val,label in status_choices %}
+                  <form method="post" action="/appointments/{{ appt.pk }}/status/">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="{{ val }}">
+                    <input type="hidden" name="next" value="/appointments/">
+                    <button type="submit" style="width:100%;text-align:left;padding:6px 12px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:12.5px;cursor:pointer;color:var(--ink-2);" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='none'">{{ label }}</button>
+                  </form>
+                  {% endfor %}
+                </div>
+              </div>
+              <a href="/appointments/{{ appt.pk }}/edit/" class="btn btn-secondary btn-xs">Edit</a>
+              {% endif %}
+
+              {% if role == 'doctor' %}
+              <form method="post" action="/appointments/{{ appt.pk }}/status/" style="display:inline;">
+                {% csrf_token %}<input type="hidden" name="next" value="/appointments/">
+                {% if appt.status == 'confirmed' %}<input type="hidden" name="status" value="in_progress"><button type="submit" class="btn btn-warning btn-xs">Start</button>{% endif %}
+                {% if appt.status == 'in_progress' %}<input type="hidden" name="status" value="completed"><button type="submit" class="btn btn-success btn-xs">Done</button>{% endif %}
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      <p>No appointments found.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function toggleDD(id){
+  document.querySelectorAll('[id^="dd-"]').forEach(e=>{ if(e.id!=='dd-'+id) e.style.display='none'; });
+  const d=document.getElementById('dd-'+id);
+  d.style.display=d.style.display==='none'?'block':'none';
+}
+document.addEventListener('click',e=>{ if(!e.target.closest('[id^="dd-"]')&&!e.target.closest('button[onclick]')) document.querySelectorAll('[id^="dd-"]').forEach(e=>e.style.display='none'); });
+</script>
+{% endblock %}

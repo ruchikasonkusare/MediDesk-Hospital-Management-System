@@ -1,0 +1,83 @@
+{% extends 'core/base.html' %}
+{% block title %}Dr. {{ doctor.name }}{% endblock %}
+{% block page_title %}Doctor Profile{% endblock %}
+
+{% block topbar_actions %}
+<a href="/doctors/{{ doctor.pk }}/edit/" class="btn btn-secondary">Edit</a>
+<a href="/appointments/new/" class="btn btn-primary">+ Appointment</a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-body">
+    <div style="display:flex;align-items:center;gap:20px;">
+      <div style="width:72px;height:72px;border-radius:18px;background:var(--teal-light);color:var(--teal);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:32px;font-weight:600;flex-shrink:0;">{{ doctor.name|first }}</div>
+      <div style="flex:1;">
+        <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:600;color:var(--ink);">Dr. {{ doctor.name }}</div>
+        <div style="font-size:14px;color:var(--teal);font-weight:500;margin-top:2px;">{{ doctor.get_specialization_display }}</div>
+        <div style="font-size:13px;color:var(--ink-3);margin-top:4px;">{{ doctor.qualification }}</div>
+      </div>
+      <div style="display:flex;gap:24px;text-align:center;">
+        <div>
+          <div style="font-family:'Fraunces',serif;font-size:28px;font-weight:600;color:var(--teal);">{{ doctor.experience_years }}</div>
+          <div style="font-size:11px;color:var(--ink-3);">Yrs Experience</div>
+        </div>
+        <div>
+          <div style="font-family:'Fraunces',serif;font-size:28px;font-weight:600;color:var(--blue);">{{ appointments.count }}</div>
+          <div style="font-size:11px;color:var(--ink-3);">Appointments</div>
+        </div>
+        <div>
+          <div style="font-family:'Fraunces',serif;font-size:28px;font-weight:600;color:var(--amber);">₹{{ doctor.consultation_fee }}</div>
+          <div style="font-size:11px;color:var(--ink-3);">Consult Fee</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:280px 1fr;gap:20px;">
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Contact Details</div></div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+        <div><div class="detail-label">Phone</div><div class="detail-value">{{ doctor.phone }}</div></div>
+        <div><div class="detail-label">Email</div><div class="detail-value" style="font-size:13px;">{{ doctor.email }}</div></div>
+        <div><div class="detail-label">License No.</div><div class="detail-value" style="font-family:monospace;font-size:13px;">{{ doctor.license_number }}</div></div>
+        <div><div class="detail-label">Available Days</div><div class="detail-value" style="font-size:13px;">{{ doctor.available_days }}</div></div>
+        <div>
+          <div class="detail-label">Status</div>
+          <span class="badge {% if doctor.is_available %}badge-active{% else %}badge-cancelled{% endif %}" style="margin-top:4px;">{% if doctor.is_available %}Available{% else %}Unavailable{% endif %}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Recent Appointments</div>
+        <a href="/appointments/new/" class="btn btn-primary btn-sm">+ Schedule</a>
+      </div>
+      <div class="table-wrap">
+        {% if appointments %}
+        <table>
+          <thead><tr><th>Patient</th><th>Date</th><th>Time</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for appt in appointments %}
+            <tr>
+              <td><a href="/patients/{{ appt.patient.pk }}/" style="color:var(--teal);font-weight:500;">{{ appt.patient.name }}</a></td>
+              <td>{{ appt.appointment_date|date:"M d, Y" }}</td>
+              <td>{{ appt.appointment_time|time:"g:i A" }}</td>
+              <td><span class="badge badge-{{ appt.status }}">{{ appt.get_status_display }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state"><p>No appointments yet.</p></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

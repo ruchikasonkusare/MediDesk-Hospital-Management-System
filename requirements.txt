@@ -1,0 +1,30 @@
+# ── Core ──────────────────────────────────────────────────────────────────────
+Django>=4.2,<5.2
+
+# ── REST API ──────────────────────────────────────────────────────────────────
+djangorestframework>=3.15
+djangorestframework-simplejwt>=5.3
+drf-spectacular>=0.27
+django-cors-headers>=4.3
+
+# ── Celery + Redis ────────────────────────────────────────────────────────────
+celery>=5.3
+redis>=5.0
+django-celery-beat>=2.6       # periodic task scheduler
+
+# ── ML / Data Science ─────────────────────────────────────────────────────────
+scikit-learn>=1.4
+numpy>=1.26
+pandas>=2.2
+
+# ── Export ────────────────────────────────────────────────────────────────────
+openpyxl>=3.1                 # Excel export
+reportlab>=4.1                # PDF export
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+pytest>=8.1
+pytest-django>=4.8
+pytest-cov>=5.0
+
+# ── Optional: SMS (Twilio) ────────────────────────────────────────────────────
+# twilio>=9.0
