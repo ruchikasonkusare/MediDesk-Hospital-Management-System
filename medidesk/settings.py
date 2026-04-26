@@ -35,6 +35,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -42,7 +43,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'medidesk.urls'
@@ -88,6 +89,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -149,31 +151,31 @@ SPECTACULAR_SETTINGS = {
 CORS_ALLOW_ALL_ORIGINS = True   # In production: set CORS_ALLOWED_ORIGINS
 
 # ── Celery + Redis ─────────────────────────────────────────────────────────────
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+# CELERY_BROKER_URL = 'redis://localhost:6379/0'
+# CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Kolkata'
 
-CELERY_BEAT_SCHEDULE = {
-    'appointment-reminders-hourly': {
-        'task': 'core.tasks.schedule_appointment_reminders',
-        'schedule': 3600,  # every hour
-    },
-    'overdue-bill-alerts-daily': {
-        'task': 'core.tasks.send_overdue_bill_alerts',
-        'schedule': 86400,  # every 24h
-    },
-    'risk-scores-nightly': {
-        'task': 'core.tasks.compute_risk_scores_batch',
-        'schedule': 86400,
-    },
-    'daily-digest-morning': {
-        'task': 'core.tasks.send_daily_digest',
-        'schedule': 86400,
-    },
-}
+# CELERY_BEAT_SCHEDULE = {
+#     'appointment-reminders-hourly': {
+#         'task': 'core.tasks.schedule_appointment_reminders',
+#         'schedule': 3600,  # every hour
+#     },
+#     'overdue-bill-alerts-daily': {
+#         'task': 'core.tasks.send_overdue_bill_alerts',
+#         'schedule': 86400,  # every 24h
+#     },
+#     'risk-scores-nightly': {
+#         'task': 'core.tasks.compute_risk_scores_batch',
+#         'schedule': 86400,
+#     },
+#     'daily-digest-morning': {
+#         'task': 'core.tasks.send_daily_digest',
+#         'schedule': 86400,
+#     },
+# }
 
 # ── Cache (Redis) ──────────────────────────────────────────────────────────────
 CACHES = {
