@@ -393,3 +393,5 @@ psycopg2-binary==2.9.12
 djangorestframework==3.16.0
 django-cors-headers==4.9.0
 djangorestframework-simplejwt==5.5.1
+celery==5.6.3
+redis==7.4.0
